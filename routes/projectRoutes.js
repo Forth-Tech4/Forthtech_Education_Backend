@@ -67,4 +67,52 @@ router.get('/recent', async (req, res) => {
   }
 });
 
+
+
+// update existing project
+router.put('/update/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ensure creator stays in members if modified
+    let members = req.body.members || [];
+    if (req.body.creatorId && !members.includes(req.body.creatorId)) {
+      members.push(req.body.creatorId);
+    }
+    members = Array.from(new Set(members)); 
+
+    const updateData = {
+      ...req.body,
+      members,
+      lastActivity: new Date().toISOString(),
+      lastUpdated: new Date().toDateString()
+    };
+
+    const updatedProject = await Project.findByIdAndUpdate(id, updateData, { new: true });
+
+    if (!updatedProject) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.json(updatedProject);
+  } catch (err) {
+    console.error('Update error:', err);
+    res.status(500).json({ message: 'Failed to update project', error: err.message });
+  }
+});
+
+
+
+router.get('/:id', async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    res.json(project);
+  } catch (err) {
+    console.error('Fetch error:', err);
+    res.status(500).json({ message: 'Failed to fetch project', error: err.message });
+  }
+});
 module.exports = router;
