@@ -46,6 +46,7 @@ app.use('/api/groups', require('./routes/groupRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/uploads', express.static('uploads')); // serve static files
 app.use('/api/upload', require('./routes/upload')); // your upload route
+app.use('/api/projects', require('./routes/projectRoutes'));
 
 // 🔌 Socket.IO
 io.on('connection', (socket) => {
