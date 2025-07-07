@@ -39,7 +39,7 @@ router.get('/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .populate('requestList.user', 'firstName lastName email') // add this
-      .populate('followList', 'firstName lastName email');      // optional
+.populate('followList', 'firstName lastName email profileImage')
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -57,7 +57,8 @@ router.get('/', async (req, res) => {
             firstName: u.firstName,
             lastName: u.lastName,
             email: u.email,
-            followList :u.followList
+            followList :u.followList,
+            profileImage:u.profileImage
         }));
         res.json(mappedUsers);
     } catch (err) {
@@ -92,6 +93,8 @@ router.get('/:userId/contacts-with-last-message', async (req, res) => {
           firstName: followedUser?.firstName,
           lastName: followedUser?.lastName,
           email: followedUser?.email,
+                  profileImage:followedUser?.profileImage,
+
           lastMessage: lastMsg
             ? {
                 message: lastMsg.message,
@@ -109,6 +112,28 @@ router.get('/:userId/contacts-with-last-message', async (req, res) => {
   }
 });
 
+router.put('/update/:id', async (req, res) => {
+  try {
+    const { firstName, lastName, email, password, profileImage } = req.body;
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+    user.email = email || user.email;
+
+    if (password) user.password = password; // ideally hash it here
+
+    if (profileImage) user.profileImage = profileImage;
+
+    await user.save();
+    res.json({ message: "Profile updated", user });
+  } catch (err) {
+    console.error("Update user error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 // PATCH /api/users/:id/request
@@ -205,63 +230,6 @@ router.post('/remove-request', async (req, res) => {
 
 
 
-// router.post('/accept-request', async (req, res) => {
-
-//   const { fromId, toId } = req.body;
-//   const io = req.app.get('io');
-//   const onlineUsers = req.app.get('onlineUsersMap'); 
-// console.log("Accept ddddddddddddrequest:", { fromId, toId, onlineUsers });
-//   try {
-//     const sender = await User.findById(fromId);
-//     const receiver = await User.findById(toId);
-
-//     if (!sender || !receiver) {
-//       return res.status(404).json({ error: 'User not found' });
-//     }
-
-//     // Clean up request lists
-//     sender.requestList = sender.requestList.filter(req => req.user.toString() !== toId);
-//     receiver.requestList = receiver.requestList.filter(req => req.user.toString() !== fromId);
-
-//     // Follow each other
-//     if (!receiver.followList.includes(fromId)) receiver.followList.push(fromId);
-//     if (!sender.followList.includes(toId)) sender.followList.push(toId);
-
-//     await sender.save();
-//     await receiver.save();
-
-//     // ✅ Get socket IDs
-//     const senderSocketId = onlineUsers.get(fromId);
-//     const receiverSocketId = onlineUsers.get(toId);
-
-//     const messageForSender = {
-//       fromId: toId,
-//       toId: fromId,
-//       type: "system",
-//       message: `You are now connectedddddddddddd with ${receiver.firstName} ${receiver.lastName}`,
-//       timestamp: new Date().toISOString()
-//     };
-
-//     const messageForReceiver = {
-//       fromId: fromId,
-//       toId: toId,
-//       type: "system",
-//       message: `You are now connectdddddddddddddddddded with ${sender.firstName} ${sender.lastName}`,
-//       timestamp: new Date().toISOString()
-//     };
-
-//     if (senderSocketId) io.to(senderSocketId).emit("system-message", messageForSender);
-//     if (receiverSocketId) io.to(receiverSocketId).emit("system-message", messageForReceiver);
-//     console.log("✅ System messages sent to both users");
-//     res.status(200).json({ message: 'Request accepted' });
-//   } catch (error) {
-//     console.error("Accept request error:", error);
-//     res.status(500).json({ error: 'Server error accepting request' });
-//   }
-// });
-
-//
-//  POST /api/messages/delete-multiple
 
 router.post('/accept-request', async (req, res) => {
   const { fromId, toId } = req.body;
