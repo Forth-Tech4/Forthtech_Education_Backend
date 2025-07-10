@@ -19,9 +19,9 @@ router.get('/', async (req, res) => {
     }
 
     const groups = await Group.find(query)
-      .populate('members', 'firstName lastName email')
-      .populate('creator', 'firstName lastName email') 
-      .populate('joinRequests', 'firstName lastName email');
+      .populate('members', 'firstName lastName email profileimage')
+      .populate('creator', 'firstName lastName email profileImage') 
+      .populate('joinRequests', 'firstName lastName email profileImage');
 
     res.json(groups);
   } catch (error) {
@@ -113,7 +113,36 @@ const creatorName = creator ? `${creator.firstName} ${creator.lastName}` : 'Some
   }
 });
 
+// GET /api/groups/user/:userId/sent-join-requests
+router.get('/user/:userId/sent-join-requests', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const groups = await Group.find({
+      joinRequests: userId,
+      members: { $ne: userId }
+    })
+    .select('name category isPrivate creator') // just select few fields
+    .populate('creator', 'firstName lastName');
 
+    res.json(groups);
+  } catch (err) {
+    console.error('Error fetching sent join requests:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.post('/cancel-join-request', async (req, res) => {
+  const { userId, groupId } = req.body;
+  try {
+    await Group.findByIdAndUpdate(groupId, {
+      $pull: { joinRequests: userId }
+    });
+    res.json({ message: "Join request cancelled" });
+  } catch (err) {
+    console.error("Error cancelling join request:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 // POST /api/groups/:groupId/add-members

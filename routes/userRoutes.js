@@ -352,6 +352,33 @@ router.post("/delete-multiple", async (req, res) => {
 
 
 
+// GET /api/users/:userId/sent-pending-requests
+router.get('/:userId/sent-pending-requests', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findById(userId)
+      .populate('requestList.user', 'firstName lastName email profileImage');
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // ✅ Filter requests you sent that are still pending (they have not accepted)
+    const sentPending = user.requestList
+      .filter(req => req.status === 'sent')
+      .map(req => ({
+        _id: req.user._id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email,
+        profileImage: req.user.profileImage
+      }));
+
+    res.json(sentPending);
+  } catch (err) {
+    console.error("❌ Error fetching sent pending requests:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 
 
