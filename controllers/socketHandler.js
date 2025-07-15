@@ -20,6 +20,7 @@ socket.on("join-group", ({ groupId }) => {
     console.log(`🧑‍💻 User ${userId} is online with socket ${socket.id}`);
   });
 
+
   // Load public history
   PublicMessage.find().sort({ timestamp: 1 }).limit(100).then((messages) => {
     socket.emit('public-chat-history', messages);
@@ -85,6 +86,26 @@ socket.on("send-message", async ({ senderId, receiverId, message, fileUrl, fileT
   socket.emit("message-sent", msg);
 });
 
+
+socket.on("mark-messages-read", async ({ senderId, receiverId }) => {
+  try {
+    // 1. Update in DB
+    await PrivateMessage.updateMany(
+      { senderId, receiverId, read: false },
+      { $set: { read: true } }
+    );
+
+    // 2. Emit to sender to update UI
+    const senderSocketId = onlineUsers.get(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("mark-messages-read", { senderId, receiverId });
+    }
+
+    console.log(`✅ Marked messages from ${senderId} -> ${receiverId} as read`);
+  } catch (err) {
+    console.error("mark-messages-read error:", err);
+  }
+});
 
 
 

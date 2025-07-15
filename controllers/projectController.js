@@ -40,7 +40,7 @@ exports.getRecentProjects = async (req, res) => {
       projects.map(async (project) => {
         let creator = null;
         if (mongoose.Types.ObjectId.isValid(project.creatorId)) {
-          creator = await User.findById(project.creatorId).select('firstName lastName email');
+          creator = await User.findById(project.creatorId).select('firstName lastName email profileImage');
         }
 
         return {
@@ -48,7 +48,8 @@ exports.getRecentProjects = async (req, res) => {
           creator: creator ? {
             firstName: creator.firstName,
             lastName: creator.lastName,
-            email: creator.email
+            email: creator.email,
+            profileImage: creator.profileImage,
           } : null
         };
       })

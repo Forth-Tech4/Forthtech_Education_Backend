@@ -17,7 +17,18 @@ const userSchema = new mongoose.Schema({
   customInterest: { type: String },
   handsOnPractice: { type: Boolean, default: false },
   remoteLabAccess: { type: Boolean, default: false },
+skillLevel: { 
+    type: String, 
+    enum: ["Beginner", "Intermediate", "Advanced"], 
+  },
 
+  freeTrial: {
+    type: Boolean,
+    default: false
+  },
+  freeTrialEndsAt: {
+    type: Date
+  },
   followList: [
     {
       type: mongoose.Schema.Types.ObjectId,

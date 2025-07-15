@@ -81,7 +81,59 @@ const loginUser = async (req, res) => {
   }
 };
 
+// Update Profile (skillLevel, interests etc)
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { skillLevel, interests, customInterest } = req.body;
+
+    user.skillLevel = skillLevel || user.skillLevel;
+    user.interests = interests || user.interests;
+    user.customInterest = customInterest || user.customInterest;
+
+    await user.save();
+
+    res.json({ message: "Profile updated successfully", user });
+  } catch (err) {
+    console.error("Error updating profile:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// Start Free Trial
+const startFreeTrial = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.freeTrial) {
+      return res.status(400).json({ message: "Free trial already activated." });
+    }
+
+    user.freeTrial = true;
+    user.freeTrialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    await user.save();
+
+    res.json({
+      message: "Free trial started",
+      freeTrial: user.freeTrial,
+      freeTrialEndsAt: user.freeTrialEndsAt
+    });
+  } catch (err) {
+    console.error("Error starting free trial:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   registerUser,
-  loginUser
+  loginUser,
+  updateProfile,
+  startFreeTrial
 };
